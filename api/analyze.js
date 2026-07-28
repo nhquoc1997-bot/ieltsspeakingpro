@@ -1,48 +1,29 @@
-// api/analyze.js
-import { GoogleGenAI } from '@google/genai';
-
 export default async function handler(req, res) {
+  // Lấy API Key từ Environment Variable của Vercel
+  const API_KEY = process.env.GEMINI_API_KEY;
+
+  if (!API_KEY) {
+    return res.status(500).json({ error: "Chưa cấu hình GEMINI_API_KEY trên Vercel" });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Đọc key từ biến môi trường của Vercel (An toàn 100%)
-  const apiKey = process.env.GEMINI_API_KEY;
-  
-  if (!apiKey) {
-    return res.status(500).json({ error: 'Chưa cài đặt GEMINI_API_KEY trên Vercel!' });
-  }
+  const { prompt } = req.body;
 
   try {
-    const { userTranscript, targetBand, question } = req.body;
-    const ai = new GoogleGenAI({ apiKey });
-
-    const prompt = `
-    You are an expert IELTS Speaking Examiner and Hospitality English Instructor. Analyze this student's response:
-    - Context: Hotel Receptionist Scenarios
-    - Question: "${question}"
-    - Target Band: ${targetBand}
-    - Student Transcript: "${userTranscript}"
-
-    Provide a concise JSON response strictly in this format:
-    {
-      "estimatedBand": "number (e.g. 6.5)",
-      "strengths": "1 short bullet point highlighting good vocabulary or structure",
-      "improvements": "1 short bullet point correcting grammar or vocabulary weaknesses",
-      "betterPhrasing": "1 upgraded native-like sentence using professional hospitality terminology"
-    }
-    `;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: { responseMimeType: 'application/json' }
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
     });
 
-    const resultJson = JSON.parse(response.text);
-    return res.status(200).json(resultJson);
-
+    const data = await response.json();
+    return res.status(200).json(data);
   } catch (error) {
-    return res.status(500).json({ error: 'Xử lý AI thất bại: ' + error.message });
+    return res.status(500).json({ error: error.message });
   }
 }
