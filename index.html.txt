@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IELTS Speaking cùng Hoàng Quốc</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: { band6: '#10B981', band7: '#0284C7', band8: '#8B5CF6' }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans pb-12">
+
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-indigo-600 rounded-lg"><i data-lucide="mic" class="w-5 h-5 text-white"></i></div>
+        <span class="font-bold text-lg text-white tracking-wide">IELTS Speaking cùng Hoàng Quốc</span>
+      </div>
+      <span class="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full font-semibold">Serverless AI</span>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 pt-8 space-y-6">
+
+    <!-- Cấu trúc nhập liệu chuẩn, không yếu tố trò chơi -->
+    <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-xl">
+      <div class="flex justify-between items-start mb-4">
+        <span class="px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold rounded-md uppercase tracking-wider">
+          Scenario: Hotel Receptionist
+        </span>
+      </div>
+      
+      <h1 id="questionText" class="text-xl font-bold text-white leading-snug mb-6">
+        "Imagine you are working at a beachfront resort in Da Nang. How would you handle a foreign guest who arrives 4 hours early for their check-in and is visibly exhausted?"
+      </h1>
+
+      <div class="space-y-4">
+        <label class="block text-sm font-semibold text-slate-300">Nội dung trả lời của bạn:</label>
+        <textarea id="userTranscript" rows="4" placeholder="Nhập câu trả lời trực tiếp tại đây..." 
+                  class="w-full bg-slate-900 border border-slate-600 rounded-xl p-4 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"></textarea>
+        
+        <button id="analyzeBtn" onclick="sendToAI()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-sm text-white shadow-lg transition flex justify-center items-center gap-2">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+          <span>Phân Tích Cốt Lõi Bằng AI</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Khu vực hiển thị kết quả -->
+    <section id="aiResult" class="hidden bg-slate-800/90 border border-indigo-500/30 rounded-2xl p-6 space-y-5">
+      <div class="flex items-center justify-between border-b border-slate-700/60 pb-4">
+        <h2 class="text-sm font-bold text-indigo-400 flex items-center gap-2">
+          <i data-lucide="check-circle" class="w-5 h-5"></i> Báo Cáo Phân Tích
+        </h2>
+        <span id="bandBadge" class="text-lg font-extrabold text-emerald-400 bg-emerald-950/60 px-3 py-1 rounded-lg border border-emerald-500/30">Band --</span>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-4 text-sm">
+        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
+          <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Điểm Tốt:</h3>
+          <p id="aiStrengths" class="text-slate-300 leading-relaxed"></p>
+        </div>
+        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
+          <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">Cần Khắc Phục:</h3>
+          <p id="aiImprovements" class="text-slate-300 leading-relaxed"></p>
+        </div>
+      </div>
+
+      <div class="bg-indigo-950/40 p-5 rounded-xl border border-indigo-500/20 text-sm">
+        <h3 class="text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Đề Xuất Nâng Cấp Thuật Ngữ (Native-like):</h3>
+        <p id="aiBetterPhrasing" class="text-indigo-100 font-medium text-base"></p>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    lucide.createIcons();
+
+    async function sendToAI() {
+      const transcript = document.getElementById('userTranscript').value.trim();
+      const question = document.getElementById('questionText').innerText;
+      const btn = document.getElementById('analyzeBtn');
+      const resultPanel = document.getElementById('aiResult');
+
+      if (!transcript) {
+        alert("Vui lòng nhập câu trả lời của bạn!");
+        return;
+      }
+
+      // Đổi trạng thái nút
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> <span>Hệ thống đang xử lý...</span>`;
+      lucide.createIcons();
+      resultPanel.classList.add('hidden');
+
+      try {
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userTranscript: transcript,
+            targetBand: "7.0",
+            question: question
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          alert("Lỗi máy chủ: " + data.error);
+        } else {
+          document.getElementById('bandBadge').innerText = "Band " + data.estimatedBand;
+          document.getElementById('aiStrengths').innerText = data.strengths;
+          document.getElementById('aiImprovements').innerText = data.improvements;
+          document.getElementById('aiBetterPhrasing').innerText = `"${data.betterPhrasing}"`;
+          resultPanel.classList.remove('hidden');
+        }
+      } catch (err) {
+        alert("Không thể kết nối với API. Vui lòng kiểm tra lại cấu hình trên Vercel.");
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> <span>Phân Tích Cốt Lõi Bằng AI</span>`;
+        lucide.createIcons();
+      }
+    }
+  </script>
+</body>
+</html>
